@@ -1,0 +1,133 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Team {
+  id              Int       @id @default(autoincrement())
+  name            String    @unique
+  shortName       String?
+  logoUrl         String?
+  teamAMatches    Match[]   @relation("TeamMatches")
+  teamBMatches    Match[]   @relation("TeamBMatches")
+  inningsBatting  Innings[]
+
+  @@map("teams")
+}
+
+model Venue {
+  id        Int     @id @default(autoincrement())
+  name      String  @unique
+  city      String?
+  country   String?
+  matches   Match[]
+
+  @@map("venues")
+}
+
+model Match {
+  id              Int     @id @default(autoincrement())
+  matchId         Int     @unique
+  title           String
+  matchNumber     Int
+  status          String
+  statusText      String?
+  startDate       DateTime
+  endDate         DateTime?
+  teamAId         Int
+  teamBId         Int
+  venueId         Int?
+  tossWinnerId    Int?
+  tossDecision    String?
+  resultType      String?
+  resultWinnerId  Int?
+  manOfTheMatch   String?
+  
+  teamA           Team     @relation("TeamMatches", fields: [teamAId], references: [id])
+  teamB           Team     @relation("TeamBMatches", fields: [teamBId], references: [id])
+  venue           Venue?   @relation(fields: [venueId], references: [id])
+  innings         Innings[]
+  scorecardData   String? // Store raw JSON for reference
+
+  @@map("matches")
+}
+
+model Innings {
+  id              Int     @id @default(autoincrement())
+  matchId         Int
+  inningsNumber   Int
+  teamId          Int
+  battingTeamId   Int
+  runsScored      Int
+  wicketsFallen   Int
+  overs           Float
+  ballsFaced      Int?
+  
+  match           Match   @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  battingTeam     Team    @relation(fields: [battingTeamId], references: [id])
+  batsmen         Batsman[]
+  bowlers         Bowler[]
+
+  @@unique([matchId, inningsNumber])
+  @@map("innings")
+}
+
+model Batsman {
+  id              Int     @id @default(autoincrement())
+  inningsId       Int
+  playerId        Int
+  playerName      String
+  runs            Int
+  ballsFaced      Int
+  fours           Int     @default(0)
+  sixes           Int     @default(0)
+  strikeRate      Float?
+  dismissalMode   String?
+  dismissalInfo   String?
+  
+  innings         Innings @relation(fields: [inningsId], references: [id], onDelete: Cascade)
+
+  @@map("batsmen")
+}
+
+model Bowler {
+  id              Int     @id @default(autoincrement())
+  inningsId       Int
+  playerId        Int
+  playerName      String
+  overs           Float
+  runs            Int
+  wickets         Int
+  dotBalls        Int     @default(0)
+  economy         Float?
+  
+  innings         Innings @relation(fields: [inningsId], references: [id], onDelete: Cascade)
+
+  @@map("bowlers")
+}
+
+model Player {
+  id              Int     @id @default(autoincrement())
+  playerId        Int     @unique
+  name            String
+  shortName       String?
+  firstName       String?
+  lastName        String?
+  birthDate       DateTime?
+  birthPlace      String?
+  country         String?
+  nationality     String?
+  primaryRole     String?
+  battingStyle    String?
+  bowlingStyle    String?
+  fantasyRating   Float?
+
+  @@map("players")
+}
